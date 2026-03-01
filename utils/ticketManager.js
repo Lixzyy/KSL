@@ -96,272 +96,425 @@ async function generateTicketTranscript(channel, member) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Transcript - ${channel.name}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg: #0d0f14;
+            --surface: #13161e;
+            --surface2: #1a1e28;
+            --border: rgba(255,255,255,0.07);
+            --accent: #5b8ef0;
+            --accent2: #a78bfa;
+            --text: #e8eaf0;
+            --muted: #6b7280;
+            --success: #34d399;
+            --danger: #f87171;
+            --glow: rgba(91, 142, 240, 0.15);
         }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
-            padding: 20px;
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
+            padding: 40px 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Fond ambiant */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -200px;
+            left: -200px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(91,142,240,0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -200px;
+            right: -200px;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(167,139,250,0.07) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
         }
 
         .container {
-            max-width: 900px;
+            max-width: 860px;
             margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── HEADER ── */
+        .header {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 36px 40px;
+            margin-bottom: 24px;
+            position: relative;
             overflow: hidden;
         }
 
-        .header {
-            background: linear-gradient(135deg, #2E83F7 0%, #1e5bc6 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
         }
 
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 15px;
+        .header-top {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+
+        .header-icon {
+            width: 46px;
+            height: 46px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+            box-shadow: 0 0 20px rgba(91,142,240,0.3);
+        }
+
+        .header-title {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 22px;
+            letter-spacing: -0.5px;
+            color: var(--text);
+        }
+
+        .header-sub {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 2px;
+            font-family: 'DM Mono', monospace;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        .stat-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            transition: border-color 0.2s;
+        }
+
+        .stat-card:hover {
+            border-color: rgba(91,142,240,0.3);
+        }
+
+        .stat-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--muted);
+            margin-bottom: 6px;
+            font-family: 'DM Mono', monospace;
+        }
+
+        .stat-value {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--text);
+        }
+
+        .stat-icon {
+            font-size: 11px;
+            margin-right: 5px;
+        }
+
+        /* ── MESSAGES ── */
+        .messages-wrapper {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .messages-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
             gap: 10px;
         }
 
-        .header-info {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-            border-top: 2px solid rgba(255, 255, 255, 0.3);
-            padding-top: 20px;
-        }
-
-        .info-block {
-            text-align: center;
-        }
-
-        .info-label {
-            font-size: 12px;
+        .messages-header-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--muted);
             text-transform: uppercase;
-            opacity: 0.9;
-            letter-spacing: 1px;
         }
 
-        .info-value {
-            font-size: 16px;
-            font-weight: 600;
-            margin-top: 5px;
+        .badge {
+            background: rgba(91,142,240,0.15);
+            color: var(--accent);
+            border: 1px solid rgba(91,142,240,0.25);
+            border-radius: 20px;
+            padding: 2px 10px;
+            font-size: 11px;
+            font-family: 'DM Mono', monospace;
         }
 
-        .messages-container {
-            padding: 30px;
-            max-height: 600px;
+        .messages-list {
+            padding: 20px;
+            max-height: 650px;
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
+
+        /* Scrollbar */
+        .messages-list::-webkit-scrollbar { width: 5px; }
+        .messages-list::-webkit-scrollbar-track { background: transparent; }
+        .messages-list::-webkit-scrollbar-thumb { background: rgba(91,142,240,0.3); border-radius: 99px; }
+        .messages-list::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
         .message {
             display: flex;
-            margin-bottom: 20px;
-            border-left: 4px solid #667eea;
-            padding-left: 15px;
-            transition: all 0.3s ease;
+            gap: 14px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            transition: background 0.15s;
+            animation: fadeSlide 0.3s ease both;
         }
 
         .message:hover {
-            border-left-color: #2E83F7;
-            background: #f5f5f5;
-            margin-left: -10px;
-            padding-left: 25px;
+            background: var(--surface2);
         }
 
-        .message-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+        @keyframes fadeSlide {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* stagger les messages */
+        .message:nth-child(1)  { animation-delay: 0.05s; }
+        .message:nth-child(2)  { animation-delay: 0.10s; }
+        .message:nth-child(3)  { animation-delay: 0.15s; }
+        .message:nth-child(4)  { animation-delay: 0.20s; }
+        .message:nth-child(5)  { animation-delay: 0.25s; }
+        .message:nth-child(n+6){ animation-delay: 0.30s; }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 13px;
             color: white;
-            font-weight: bold;
-            margin-right: 15px;
             flex-shrink: 0;
-            font-size: 12px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            box-shadow: 0 2px 8px rgba(91,142,240,0.25);
         }
 
-        .message-content {
-            flex: 1;
-        }
+        .msg-body { flex: 1; min-width: 0; }
 
-        .message-header {
+        .msg-meta {
             display: flex;
-            align-items: center;
+            align-items: baseline;
             gap: 10px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
-        .message-author {
-            font-weight: 600;
-            color: #2E83F7;
-            font-size: 15px;
+        .msg-author {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--accent);
         }
 
-        .message-timestamp {
-            font-size: 12px;
-            color: #999;
+        .msg-time {
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
         }
 
-        .message-text {
-            color: #555;
-            line-height: 1.5;
-            word-wrap: break-word;
+        .msg-text {
+            font-size: 14px;
+            line-height: 1.6;
+            color: rgba(232,234,240,0.85);
+            word-break: break-word;
             white-space: pre-wrap;
         }
 
-        .message-attachments {
+        .msg-attachments {
             margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #eee;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .attachment-link {
-            display: inline-block;
-            background: #f0f0f0;
-            padding: 8px 12px;
-            border-radius: 6px;
-            color: #2E83F7;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(91,142,240,0.1);
+            border: 1px solid rgba(91,142,240,0.2);
+            padding: 6px 12px;
+            border-radius: 8px;
+            color: var(--accent);
             text-decoration: none;
-            margin-right: 8px;
-            margin-top: 5px;
-            font-size: 13px;
-            transition: all 0.3s ease;
+            font-size: 12px;
+            font-family: 'DM Mono', monospace;
+            transition: all 0.2s;
         }
 
         .attachment-link:hover {
-            background: #2E83F7;
-            color: white;
+            background: rgba(91,142,240,0.2);
+            border-color: var(--accent);
         }
 
         .empty-message {
             text-align: center;
-            padding: 30px;
-            color: #999;
+            padding: 60px 30px;
+            color: var(--muted);
+            font-size: 14px;
         }
 
+        .empty-icon { font-size: 36px; display: block; margin-bottom: 12px; opacity: 0.4; }
+
+        /* ── FOOTER ── */
         .footer {
-            background: #f5f5f5;
-            padding: 20px 30px;
+            margin-top: 20px;
             text-align: center;
-            border-top: 1px solid #eee;
             font-size: 12px;
-            color: #666;
+            color: var(--muted);
+            font-family: 'DM Mono', monospace;
+            padding: 16px;
         }
 
-        .divider {
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #eee, transparent);
-            margin: 15px 0;
+        .footer strong {
+            color: var(--accent);
         }
 
-        .messages-container::-webkit-scrollbar {
-            width: 8px;
+        /* Séparateur entre messages groupés */
+        .sep {
+            height: 1px;
+            background: var(--border);
+            margin: 4px 16px;
+            opacity: 0.5;
         }
 
-        .messages-container::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-
-        .messages-container::-webkit-scrollbar-thumb {
-            background: #667eea;
-            border-radius: 4px;
-        }
-
-        .messages-container::-webkit-scrollbar-thumb:hover {
-            background: #2E83F7;
-        }
     </style>
 </head>
 <body>
     <div class="container">
+
+        <!-- HEADER -->
         <div class="header">
-            <h1>📋 Transcript du Ticket</h1>
-            <div class="header-info">
-                <div class="info-block">
-                    <div class="info-label">👤 Utilisateur</div>
-                    <div class="info-value">${member.user.tag}</div>
+            <div class="header-top">
+                <div class="header-icon">📋</div>
+                <div>
+                    <div class="header-title">Transcript du Ticket</div>
+                    <div class="header-sub">${channel.name}</div>
                 </div>
-                <div class="info-block">
-                    <div class="info-label">🎟️ Ticket</div>
-                    <div class="info-value">${channel.name}</div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label"><span class="stat-icon">👤</span>Utilisateur</div>
+                    <div class="stat-value">${member.user.tag}</div>
                 </div>
-                <div class="info-block">
-                    <div class="info-label">🗓️ Créé le</div>
-                    <div class="info-value">${createdDate}</div>
+                <div class="stat-card">
+                    <div class="stat-label"><span class="stat-icon">🗓️</span>Créé le</div>
+                    <div class="stat-value">${createdDate}</div>
                 </div>
-                <div class="info-block">
-                    <div class="info-label">✅ Fermé le</div>
-                    <div class="info-value">${closedDate}</div>
+                <div class="stat-card">
+                    <div class="stat-label"><span class="stat-icon">✅</span>Fermé le</div>
+                    <div class="stat-value">${closedDate}</div>
                 </div>
-                <div class="info-block">
-                    <div class="info-label">💬 Messages</div>
-                    <div class="info-value">${messages.length}</div>
+                <div class="stat-card">
+                    <div class="stat-label"><span class="stat-icon">💬</span>Messages</div>
+                    <div class="stat-value">${messages.length}</div>
                 </div>
             </div>
         </div>
 
-        <div class="messages-container">
-            ${messages.length === 0 ? '<div class="empty-message">Aucun message dans ce ticket</div>' : ''}
-            ${messages.map(msg => {
-                if (!msg.content && msg.attachments.size === 0) return '';
-                
-                const timestamp = new Date(msg.createdTimestamp).toLocaleString('fr-FR');
-                const avatar = msg.author.username.charAt(0).toUpperCase();
-                const content = msg.content || '*(aucun texte)*';
-                const attachments = msg.attachments.size > 0 
-                    ? `<div class="message-attachments">
-                        ${msg.attachments.map(att => 
-                            `<a href="${att.url}" class="attachment-link" target="_blank">📎 ${att.name}</a>`
-                        ).join('')}
-                       </div>`
-                    : '';
+        <!-- MESSAGES -->
+        <div class="messages-wrapper">
+            <div class="messages-header">
+                <span class="messages-header-title">Conversation</span>
+                <span class="badge">${messages.length} messages</span>
+            </div>
 
-                return `
-                    <div class="message">
-                        <div class="message-avatar">${avatar}</div>
-                        <div class="message-content">
-                            <div class="message-header">
-                                <span class="message-author">${msg.author.username}</span>
-                                <span class="message-timestamp">${timestamp}</span>
+            <div class="messages-list">
+                ${messages.length === 0
+                    ? `<div class="empty-message"><span class="empty-icon">💬</span>Aucun message dans ce ticket</div>`
+                    : messages.map(msg => {
+                        if (!msg.content && msg.attachments.size === 0) return '';
+
+                        const timestamp = new Date(msg.createdTimestamp).toLocaleString('fr-FR');
+                        const avatar = msg.author.username.charAt(0).toUpperCase();
+                        const content = msg.content || '*(aucun texte)*';
+                        const attachments = msg.attachments.size > 0
+                            ? `<div class="msg-attachments">
+                                ${msg.attachments.map(att =>
+                                    `<a href="${att.url}" class="attachment-link" target="_blank">📎 ${att.name}</a>`
+                                ).join('')}
+                               </div>`
+                            : '';
+
+                        return `
+                            <div class="message">
+                                <div class="avatar">${avatar}</div>
+                                <div class="msg-body">
+                                    <div class="msg-meta">
+                                        <span class="msg-author">${msg.author.username}</span>
+                                        <span class="msg-time">${timestamp}</span>
+                                    </div>
+                                    <div class="msg-text">${escapeHtml(content)}</div>
+                                    ${attachments}
+                                </div>
                             </div>
-                            <div class="message-text">${escapeHtml(content)}</div>
-                            ${attachments}
-                        </div>
-                    </div>
-                    <div class="divider"></div>
-                `;
-            }).join('')}
+                        `;
+                    }).join('<div class="sep"></div>')}
+            </div>
         </div>
 
+        <!-- FOOTER -->
         <div class="footer">
-            <strong>KSL Support System</strong> - Transcript généré le ${closedDate}
+            <strong>KSL Support System</strong> · Transcript généré le ${closedDate}
         </div>
+
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const container = document.querySelector('.messages-container');
-            if (container) {
-                container.scrollTop = container.scrollHeight;
-            }
+            const list = document.querySelector('.messages-list');
+            if (list) list.scrollTop = list.scrollHeight;
         });
     </script>
 </body>
