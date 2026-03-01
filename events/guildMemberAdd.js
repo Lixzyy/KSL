@@ -19,5 +19,15 @@ module.exports = {
             .setFooter({ text: `Bienvenue #${member.id}` })
             .setTimestamp();
 
+        // envoi du message de bienvenue dans le canal configuré
+        await channel.send({ embeds: [welcomeEmbed] }).catch(console.error);
+
+        // attribution d'un rôle automatique si l'ID est défini dans les variables d'environnement
+        if (process.env.DEFAULT_ROLE_ID) {
+            const role = member.guild.roles.cache.get(process.env.DEFAULT_ROLE_ID);
+            if (role) {
+                await member.roles.add(role).catch(console.error);
+            }
+        }
     }
 };
