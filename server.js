@@ -134,7 +134,6 @@ a { color:#7b4fd4; text-decoration:none; }
 });
 
 app.get('/transcript/:id', requireAuth, (req, res) => {
->>>>>>> 9683a21eb2077c8d84179b7130a983a55e8bf31a
     const id = req.params.id;
     if (!/^[\w-]+$/.test(id)) return res.status(400).send('Identifiant invalide');
 
