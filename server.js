@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
@@ -14,11 +15,16 @@ if (!fs.existsSync(transcriptsDir)) {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// --- SESSIONS SECURISEES ---
 app.use(
     session({
         secret: process.env.SESSION_SECRET || 'changeme',
         resave: false,
         saveUninitialized: false,
+        store: MongoStore.create({
+            mongoUrl: process.env.MONGO_URI,
+            collectionName: 'sessions'
+        }),
         cookie: { maxAge: 24 * 60 * 60 * 1000 } // 24h
     })
 );
@@ -31,6 +37,7 @@ function requireAuth(req, res, next) {
     res.redirect('/login');
 }
 
+// --- ROUTES ---
 app.get('/login', (req, res) => {
     const clientId = process.env.DISCORD_CLIENT_ID;
     const redirectUri = encodeURIComponent(`${process.env.SERVER_URL}/auth/callback`);
@@ -41,9 +48,7 @@ app.get('/login', (req, res) => {
 
 app.get('/auth/callback', async (req, res) => {
     const code = req.query.code;
-    if (!code) {
-        return res.redirect('/error?msg=no_code');
-    }
+    if (!code) return res.redirect('/error?msg=no_code');
 
     try {
         const tokenResp = await axios.post(
@@ -70,9 +75,7 @@ app.get('/auth/callback', async (req, res) => {
 
         const guilds = guildsResp.data || [];
         const isMember = guilds.some(g => g.id === process.env.GUILD_ID);
-        if (!isMember) {
-            return res.redirect('/error?msg=not_member');
-        }
+        if (!isMember) return res.redirect('/error?msg=not_member');
 
         req.session.user = {
             id: userResp.data.id,
@@ -99,36 +102,29 @@ app.get('/error', (req, res) => {
     const msg = req.query.msg;
     let text;
     switch (msg) {
-        case 'not_member':
-            text = "Vous n'êtes pas membre du serveur.";
-            break;
-        case 'oauth_failed':
-            text = "Échec de l'authentification.";
-            break;
-        case 'no_code':
-            text = "Aucun code fourni.";
-            break;
-        default:
-            text = "Erreur inconnue.";
+        case 'not_member': text = "Vous n'êtes pas membre du serveur."; break;
+        case 'oauth_failed': text = "Échec de l'authentification."; break;
+        case 'no_code': text = "Aucun code fourni."; break;
+        default: text = "Erreur inconnue.";
     }
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="utf-8" />
-    <title>Erreur</title>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=IBM+Plex+Sans&display=swap" rel="stylesheet" />
-    <style>
-        body { background:#08070f; color:#9966ee; font-family:'IBM Plex Sans',sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; }
-        a { color:#7b4fd4; text-decoration:none; }
-    </style>
+<meta charset="utf-8" />
+<title>Erreur</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=IBM+Plex+Sans&display=swap" rel="stylesheet" />
+<style>
+body { background:#08070f; color:#9966ee; font-family:'IBM Plex Sans',sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; }
+a { color:#7b4fd4; text-decoration:none; }
+</style>
 </head>
 <body>
-    <div>
-        <h1>Erreur</h1>
-        <p>${text}</p>
-        <a href="/login">Se connecter</a>
-    </div>
+<div>
+<h1>Erreur</h1>
+<p>${text}</p>
+<a href="/login">Se connecter</a>
+</div>
 </body>
 </html>`);
 });
@@ -138,9 +134,7 @@ app.get('/transcript/:id', requireAuth, (req, res) => {
     if (!/^[\w-]+$/.test(id)) return res.status(400).send('Identifiant invalide');
 
     const filePath = path.join(transcriptsDir, `${id}.html`);
-    if (!fs.existsSync(filePath)) {
-        return res.status(404).send('Transcript non trouvé');
-    }
+    if (!fs.existsSync(filePath)) return res.status(404).send('Transcript non trouvé');
 
     let html = fs.readFileSync(filePath, 'utf-8');
 
@@ -156,9 +150,9 @@ app.get('/transcript/:id', requireAuth, (req, res) => {
 
         const badge = `
 <div id="login-badge" style="position:fixed;bottom:10px;right:10px;background:#0d0b18;color:#fff;padding:5px 10px;border-radius:5px;display:flex;align-items:center;gap:5px;font-family:'IBM Plex Sans',sans-serif;z-index:9999;">
-    <img src="${avatarUrl}" alt="avatar" style="width:24px;height:24px;border-radius:50%;" />
-    <span>${user.username}</span>
-    <a href="/logout" style="color:#9966ee;text-decoration:none;margin-left:8px;">Quitter</a>
+<img src="${avatarUrl}" alt="avatar" style="width:24px;height:24px;border-radius:50%;" />
+<span>${user.username}</span>
+<a href="/logout" style="color:#9966ee;text-decoration:none;margin-left:8px;">Quitter</a>
 </div>`;
 
         html = html.replace('</body>', `${badge}\n</body>`);
@@ -167,6 +161,7 @@ app.get('/transcript/:id', requireAuth, (req, res) => {
     res.send(html);
 });
 
+// --- DEMARRAGE DU SERVEUR ---
 app.listen(PORT, () => {
     console.log(`🌐 Serveur Express démarré sur le port ${PORT}`);
 });
