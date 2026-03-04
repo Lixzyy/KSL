@@ -25,6 +25,10 @@ app.get('/transcript/:id', (req, res) => {
     }
 });
 
+app.get('/', (req, res) => {
+    res.status(200).send('OK');
+});
+
 app.listen(PORT, () => {
     console.log(`🌐 Serveur de transcripts lancé sur le port ${PORT}`);
 });
