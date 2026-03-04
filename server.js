@@ -1,10 +1,8 @@
 require('dotenv').config();
 const express = require('express');
-
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const axios = require('axios');
-
 const fs = require('fs');
 const path = require('path');
 
@@ -17,8 +15,6 @@ if (!fs.existsSync(transcriptsDir)) {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-
-app.get('/transcript/:id', (req, res) => {
 // --- SESSIONS SECURISEES ---
 app.use(
     session({
@@ -91,7 +87,7 @@ app.get('/auth/callback', async (req, res) => {
         delete req.session.redirectTo;
         res.redirect(redirectTo);
     } catch (err) {
-        console.error('OAuth callback error', err);
+        console.error('OAuth callback error', err.response?.data || err);
         res.redirect('/error?msg=oauth_failed');
     }
 });
@@ -117,9 +113,8 @@ app.get('/error', (req, res) => {
 <head>
 <meta charset="utf-8" />
 <title>Erreur</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=IBM+Plex+Sans&display=swap" rel="stylesheet" />
 <style>
-body { background:#08070f; color:#9966ee; font-family:'IBM Plex Sans',sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; }
+body { background:#08070f; color:#9966ee; font-family:sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; }
 a { color:#7b4fd4; text-decoration:none; }
 </style>
 </head>
@@ -133,15 +128,13 @@ a { color:#7b4fd4; text-decoration:none; }
 </html>`);
 });
 
+// --- TRANSCRIPTS ---
 app.get('/transcript/:id', requireAuth, (req, res) => {
     const id = req.params.id;
     if (!/^[\w-]+$/.test(id)) return res.status(400).send('Identifiant invalide');
 
     const filePath = path.join(transcriptsDir, `${id}.html`);
     if (!fs.existsSync(filePath)) return res.status(404).send('Transcript non trouvé');
-
-
-    res.sendFile(filePath);
 
     let html = fs.readFileSync(filePath, 'utf-8');
 
@@ -156,7 +149,7 @@ app.get('/transcript/:id', requireAuth, (req, res) => {
         }
 
         const badge = `
-<div id="login-badge" style="position:fixed;bottom:10px;right:10px;background:#0d0b18;color:#fff;padding:5px 10px;border-radius:5px;display:flex;align-items:center;gap:5px;font-family:'IBM Plex Sans',sans-serif;z-index:9999;">
+<div id="login-badge" style="position:fixed;bottom:10px;right:10px;background:#0d0b18;color:#fff;padding:5px 10px;border-radius:5px;display:flex;align-items:center;gap:5px;">
 <img src="${avatarUrl}" alt="avatar" style="width:24px;height:24px;border-radius:50%;" />
 <span>${user.username}</span>
 <a href="/logout" style="color:#9966ee;text-decoration:none;margin-left:8px;">Quitter</a>
