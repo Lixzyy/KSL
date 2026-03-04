@@ -1,11 +1,10 @@
 require('dotenv').config();
 const express = require('express');
-<<<<<<< HEAD
-=======
+
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const axios = require('axios');
->>>>>>> 9683a21eb2077c8d84179b7130a983a55e8bf31a
+
 const fs = require('fs');
 const path = require('path');
 
@@ -18,9 +17,8 @@ if (!fs.existsSync(transcriptsDir)) {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-<<<<<<< HEAD
+
 app.get('/transcript/:id', (req, res) => {
-=======
 // --- SESSIONS SECURISEES ---
 app.use(
     session({
@@ -143,9 +141,9 @@ app.get('/transcript/:id', requireAuth, (req, res) => {
     const filePath = path.join(transcriptsDir, `${id}.html`);
     if (!fs.existsSync(filePath)) return res.status(404).send('Transcript non trouvé');
 
-<<<<<<< HEAD
+
     res.sendFile(filePath);
-=======
+
     let html = fs.readFileSync(filePath, 'utf-8');
 
     if (req.session.user) {
@@ -169,7 +167,6 @@ app.get('/transcript/:id', requireAuth, (req, res) => {
     }
 
     res.send(html);
->>>>>>> 9683a21eb2077c8d84179b7130a983a55e8bf31a
 });
 
 // --- DEMARRAGE DU SERVEUR ---
