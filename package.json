@@ -1,5 +1,5 @@
 {
-  "name": "KSL",
+  "name": "fivem-pvp-discord-bot",
   "version": "1.0.0",
   "description": "Discord bot for a FiveM PvP team: welcome messages, ticketing, and server population updates",
   "main": "index.js",
