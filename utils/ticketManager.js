@@ -402,13 +402,13 @@ async function createTicket(interaction) {
     const category = guild.channels.cache.get(process.env.TICKET_CATEGORY_ID);
 
     if (!category) {
-        return interaction.reply({ content: 'Catégorie de tickets introuvable.', ephemeral: true });
+        return interaction.editReply({ content: 'Catégorie de tickets introuvable.' });
     }
 
     const ticketName = `tickets-${member.user.username}`;
     const existing   = guild.channels.cache.find(c => c.name === ticketName);
     if (existing) {
-        return interaction.reply({ content: 'Vous avez déjà un ticket ouvert.', ephemeral: true });
+        return interaction.editReply({ content: 'Vous avez déjà un ticket ouvert.' });
     }
 
     const channel = await guild.channels.create({
@@ -447,7 +447,7 @@ async function createTicket(interaction) {
         .setEmoji('❌');
 
     await channel.send({ embeds: [ticketEmbed], components: [new ActionRowBuilder().addComponents(closeButton)] });
-    return interaction.reply({ content: `✅ Votre ticket a été créé: ${channel}`, ephemeral: true });
+    return interaction.editReply({ content: `✅ Votre ticket a été créé: ${channel}` });
 }
 
 async function generateTicketTranscript(channel, member) {
